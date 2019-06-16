@@ -11,6 +11,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ListView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
+
+import java.time.LocalDateTime;
+import java.util.Date;
 
 public class MinhasTarefasController extends AppController {
 
@@ -34,7 +41,7 @@ public class MinhasTarefasController extends AppController {
 
         lstAfazer.setCellFactory(f -> new NovaTarefaCell());
         lstFazendo.setCellFactory(y -> new FazendoCell());
-        lstFeito.setCellFactory(f -> new FeitoCell());
+        lstFeito.setCellFactory(a -> new FeitoCell());
 
         var listAfazer = dao.listarPorStatus(UsuarioUtils.getUsuario(), 1);
         var listFazendo = dao.listarPorStatus(UsuarioUtils.getUsuario(), 2);
@@ -51,4 +58,90 @@ public class MinhasTarefasController extends AppController {
 
 
     }
+
+
+    public void gragAfazerStart(MouseEvent event){
+        var dragboard = lstAfazer.startDragAndDrop(TransferMode.MOVE);
+
+        var pos = lstAfazer.getSelectionModel().getSelectedIndex();
+
+        var content = new ClipboardContent();
+        content.putString(String.valueOf(pos));
+
+        dragboard.setContent(content);
+
+        event.consume();
+
+    }
+
+    public void DragOver(DragEvent event){
+        event.acceptTransferModes(TransferMode.MOVE);
+        event.consume();
+    }
+
+    public void dropAfazer(DragEvent event){
+        var dragboard = event.getDragboard();
+        var pos = dragboard.getString();
+
+        var afazer = aFazer.get(Integer.parseInt(pos));
+
+        var dao = new TarefaDAO();
+
+        var faz = new TarefaVO();
+        faz.setResponsavel(afazer.getResponsavel());
+        faz.setProjeto(afazer.getProjeto());
+        faz.setInicio(LocalDateTime.now());
+        faz.setStatus(2);
+        faz.setDescricao(afazer.getDescricao());
+        faz.setTermino(afazer.getTermino());
+        faz.setId(afazer.getId());
+        dao.alterar(faz);
+
+        fazendo.add(faz);
+        aFazer.remove(afazer);
+
+        event.consume();
+
+
+    }
+    public void dragFazendoStart(MouseEvent event){
+        var dragboard = lstFazendo.startDragAndDrop(TransferMode.MOVE);
+
+        var pos = lstFazendo.getSelectionModel().getSelectedIndex();
+
+        var content = new ClipboardContent();
+        content.putString(String.valueOf(pos));
+
+        dragboard.setContent(content);
+
+        event.consume();
+
+    }
+    public void dropFeito(DragEvent event){
+        var dragboard = event.getDragboard();
+        var pos = dragboard.getString();
+
+        var fazen = fazendo.get(Integer.parseInt(pos));
+
+        var dao = new TarefaDAO();
+
+        var faz = new TarefaVO();
+        faz.setResponsavel(fazen.getResponsavel());
+        faz.setProjeto(fazen.getProjeto());
+        faz.setTermino(LocalDateTime.now());
+        faz.setInicio(fazen.getInicio());
+        faz.setStatus(3);
+        faz.setDescricao(fazen.getDescricao());
+        faz.setId(fazen.getId());
+
+        dao.alterar(faz);
+
+        feito.add(faz);
+        fazendo.remove(fazen);
+
+        event.consume();
+
+
+    }
+
 }
